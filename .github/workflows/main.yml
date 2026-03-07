@@ -8,43 +8,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    concurrency:
-      group: auto-pluto-update
-      cancel-in-progress: true
 
     steps:
-      - name: Checkout (with write permissions)
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          check-latest: true
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Cache Node Modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+        run: npm install
 
       - name: Run scraper
         run: node index.js
 
-      - name: Pull latest changes
-        run: git pull
-
       - name: Commit files
-        uses: EndBug/add-and-commit@v9
-        with:
-          default_author: github_actions
-          message: "Auto-update playlist on ${{ github.event.repository.updated_at }}"
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Auto update playlist" || echo "No changes"
+          git push --force
